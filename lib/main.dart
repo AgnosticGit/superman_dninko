@@ -32,37 +32,42 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final signaling = Signaling();
+  late final Signaling signaling;
+
   final _localRenderer = RTCVideoRenderer();
   final _remoteRenderer = RTCVideoRenderer();
-  String? roomId;
+
   final textEditingController = TextEditingController(text: '');
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await signaling.init();
-
       _localRenderer.initialize();
       _remoteRenderer.initialize();
 
-      signaling.onAddRemoteStream = ((stream) {
-        log('Stream!!!!!');
-        log(stream.toString());
-        _remoteRenderer.srcObject = stream;
-        log(stream.id);
-        log(stream.getVideoTracks().length.toString());
-        setState(() {});
-      });
+      final stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': false});
+      _localRenderer.srcObject = stream;
 
-      signaling.openUserMedia(_localRenderer, _remoteRenderer);
+      signaling = Signaling(
+        stream,
+        _onAddRemoteStream,
+      );
 
-      Timer.periodic(Duration(seconds: 1), (_) {
+      await signaling.initConnection();
+
+      Timer.periodic(const Duration(seconds: 1), (_) {
         setState(() {});
       });
     });
 
     super.initState();
+  }
+
+  void _onAddRemoteStream(MediaStream stream) {
+    log('Stream!!!!!');
+    _remoteRenderer.srcObject = stream;
+    log(stream.id);
+    setState(() {});
   }
 
   @override
@@ -77,29 +82,24 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: Column(
         children: [
-          SizedBox(height: 28),
+          const SizedBox(height: 50),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
                 onPressed: () async {
-                  await signaling.createRoom(_remoteRenderer);
+                  await signaling.createRoom();
                   setState(() {});
                 },
-                child: Text("Create room"),
+                child: const Text("Create room"),
               ),
+              const SizedBox(height: 50),
               ElevatedButton(
                 onPressed: () {
-                  signaling.joinRoom(_remoteRenderer);
+                  signaling.joinRoom();
                 },
-                child: Text("Join room"),
+                child: const Text("Join room"),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  signaling.hangUp(_localRenderer);
-                },
-                child: Text("Hangup"),
-              )
             ],
           ),
           Expanded(
@@ -137,7 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ),
-          SizedBox(height: 8)
+          const SizedBox(height: 8)
         ],
       ),
     );

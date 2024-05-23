@@ -2,12 +2,16 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
-
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 typedef void StreamStateCallback(MediaStream stream);
 
 class Signaling {
+  Signaling(
+    this.localStream,
+    this.onAddRemoteStream,
+  );
+
   Map<String, dynamic> configuration = {
     'iceServers': [
       {
@@ -22,21 +26,28 @@ class Signaling {
     ]
   };
 
-  late RTCPeerConnection peerConnection;
-  MediaStream? localStream;
-  MediaStream? remoteStream;
-  String? roomId;
-  String? currentRoomText;
-  StreamStateCallback? onAddRemoteStream;
+  final MediaStream localStream;
+  final StreamStateCallback onAddRemoteStream;
+
+  late final RTCPeerConnection peerConnection;
+  MediaStream? remoteStream; // Обновлено для предотвращения повторной инициализации
+
   // String host = '192.168.56.1:9545';
   String host = '94.41.19.174:9545';
 
-  Future<void> init() async {
+  Future<void> initConnection() async {
     peerConnection = await createPeerConnection(configuration);
     registerPeerConnectionListeners();
+    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+    peerConnection.onTrack = (event) async {
+      log('Event!');
+      remoteStream ??= await createLocalMediaStream('remoteStream');
+      event.streams[0].getTracks().forEach((track) => remoteStream!.addTrack(track));
+      onAddRemoteStream(remoteStream!);
+    };
   }
 
-  Future<void> createRoom(RTCVideoRenderer remoteRenderer) async {
+  Future<void> createRoom() async {
     log('ЧТО ТО ПРОИСХОДИТ');
     await http.post(
       Uri.parse('http://$host/write/answer'),
@@ -44,7 +55,7 @@ class Signaling {
       body: jsonEncode({'': ''}),
     );
 
-    final data = await _createRoom(remoteRenderer);
+    final data = await _createRoom();
 
     log('Комната создана');
 
@@ -96,40 +107,7 @@ class Signaling {
     }
   }
 
-  Future<Map<String, dynamic>> _createRoom(RTCVideoRenderer remoteRenderer) async {
-    final Map<String, dynamic> offerData = {
-      'callerCandidates': <Map<String, dynamic>>[],
-      'offer': <Map<String, dynamic>>{},
-    };
-
-    localStream?.getTracks().forEach((track) {
-      peerConnection.addTrack(track, localStream!);
-    });
-
-    peerConnection.onIceCandidate = (candidate) {
-      final callerCandidates = offerData['callerCandidates'] as List<Map<String, dynamic>>;
-      callerCandidates.add(candidate.toMap());
-    };
-
-    // Add code for creating a room
-    final offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-
-    offerData['offer'] = offer.toMap();
-
-    // Created a Room
-    peerConnection.onTrack = (event) {
-      log(event.toString());
-      log('!!!!!!!!!!!!!');
-      event.streams[0].getTracks().forEach((track) => remoteStream?.addTrack(track));
-    };
-
-    await Future.delayed(Duration(seconds: 1));
-
-    return offerData;
-  }
-
-  Future<void> joinRoom(RTCVideoRenderer remoteRenderer) async {
+  Future<void> joinRoom() async {
     final offerData = await http.get(
       Uri.parse('http://$host/read/creator'),
     );
@@ -142,7 +120,7 @@ class Signaling {
 
     await peerConnection.setRemoteDescription(offer);
 
-    final answerData = await _joinRoom(body, remoteRenderer);
+    final answerData = await _joinRoom(body);
 
     await http.post(
       Uri.parse('http://$host/write/answer'),
@@ -151,27 +129,37 @@ class Signaling {
     );
   }
 
-  Future<Map<String, dynamic>> _joinRoom(
-    Map<String, dynamic> offerData,
-    RTCVideoRenderer remoteVideo,
-  ) async {
+  Future<Map<String, dynamic>> _createRoom() async {
+    final Map<String, dynamic> offerData = {
+      'callerCandidates': <Map<String, dynamic>>[],
+      'offer': <Map<String, dynamic>>{},
+    };
+
+    peerConnection.onIceCandidate = (candidate) {
+      final callerCandidates = offerData['callerCandidates'] as List<Map<String, dynamic>>;
+      callerCandidates.add(candidate.toMap());
+    };
+
+    final offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    offerData['offer'] = offer.toMap();
+
+    await Future.delayed(Duration(seconds: 1));
+
+    return offerData;
+  }
+
+  Future<Map<String, dynamic>> _joinRoom(Map<String, dynamic> offerData) async {
     final Map<String, dynamic> answerData = {
       'calleeCandidates': <Map<String, dynamic>>[],
       'answer': <Map<String, dynamic>>{},
     };
-
-    localStream?.getTracks().forEach((track) => peerConnection.addTrack(track, localStream!));
 
     peerConnection.onIceCandidate = (candidate) {
       final callerCandidates = answerData['calleeCandidates'] as List<Map<String, dynamic>>;
       callerCandidates.add(candidate.toMap());
     };
 
-    peerConnection.onTrack = (event) {
-      event.streams[0].getTracks().forEach((track) => remoteStream?.addTrack(track));
-    };
-
-    // Code for creating SDP answer below
     final offer = offerData['offer'];
     await peerConnection.setRemoteDescription(
       RTCSessionDescription(offer['sdp'], offer['type']),
@@ -198,85 +186,29 @@ class Signaling {
     return answerData;
   }
 
-  Future<void> openUserMedia(
-    RTCVideoRenderer localVideo,
-    RTCVideoRenderer remoteVideo,
-  ) async {
-    final stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': false});
-
-    localVideo.srcObject = stream;
-    localStream = stream;
-
-    // remoteVideo.srcObject = await createLocalMediaStream('key');
-  }
-
-  Future<void> hangUp(RTCVideoRenderer localVideo) async {
-    // List<MediaStreamTrack> tracks = localVideo.srcObject!.getTracks();
-    // tracks.forEach((track) {
-    //   track.stop();
-    // });
-
-    // if (remoteStream != null) {
-    //   remoteStream!.getTracks().forEach((track) => track.stop());
-    // }
-    // if (peerConnection != null) peerConnection!.close();
-
-    // if (roomId != null) {
-    //   var db = FirebaseFirestore.instance;
-    //   var roomRef = db.collection('rooms').doc(roomId);
-    //   var calleeCandidates = await roomRef.collection('calleeCandidates').get();
-    //   calleeCandidates.docs.forEach((document) => document.reference.delete());
-
-    //   var callerCandidates = await roomRef.collection('callerCandidates').get();
-    //   callerCandidates.docs.forEach((document) => document.reference.delete());
-
-    //   await roomRef.delete();
-    // }
-
-    // localStream!.dispose();
-    // remoteStream?.dispose();
-  }
-
   void registerPeerConnectionListeners() {
-    peerConnection.onIceGatheringState = (RTCIceGatheringState state) {
-      print('ICE gathering state changed: $state');
+    peerConnection.onIceGatheringState = (state) {
+      log('ICE gathering state changed: $state');
     };
 
-    peerConnection.onConnectionState = (RTCPeerConnectionState state) {
-      print('Connection state change: $state');
+    peerConnection.onConnectionState = (state) {
+      log('Connection state change: $state');
     };
 
-    peerConnection.onSignalingState = (RTCSignalingState state) {
-      print('Signaling state change: $state');
+    peerConnection.onSignalingState = (state) {
+      log('Signaling state change: $state');
     };
 
-    peerConnection.onIceGatheringState = (RTCIceGatheringState state) {
-      print('ICE connection state change: $state');
+    peerConnection.onIceConnectionState = (state) {
+      log('ICE connection state change: $state');
     };
 
-    peerConnection.onAddStream = (MediaStream stream) {
-      print("Add remote stream");
-      onAddRemoteStream?.call(stream);
-      remoteStream = stream;
-    };
-  }
-}
-
-Future<void> _waitForIceCompletion(RTCPeerConnection peerConnection) async {
-  final completer = Completer<void>();
-
-  if (peerConnection.iceConnectionState == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
-    completer.complete();
-    return completer.future;
-  }
-
-  peerConnection.onIceConnectionState = (state) {
-    if (state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
-      if (!completer.isCompleted) {
-        completer.complete();
+    peerConnection.onAddStream = (stream) {
+      log("Add remote stream");
+      if (remoteStream == null) {
+        remoteStream = stream;
+        onAddRemoteStream(remoteStream!);
       }
-    }
-  };
-
-  return completer.future;
+    };
+  }
 }
