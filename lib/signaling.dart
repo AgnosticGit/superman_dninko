@@ -13,30 +13,28 @@ class Signaling {
   Map<String, dynamic> configuration = {
     'iceServers': [
       {
-        'urls': [
-          "stun:stun.l.google.com:19302",
-          "stun:stun1.l.google.com:19302",
-          "stun:stun2.l.google.com:19302",
-          "stun:stun3.l.google.com:19302",
-          "stun:stun4.l.google.com:19302"
-        ]
+        'urls': "stun:stun.relay.metered.ca:80"
       },
       {
-        'urls': 'turn:turn.anyfirewall.com:443?transport=tcp',
-        'username': 'webrtc',
-        'credential': 'webrtc'
-      },
-      // Дополнительные TURN серверы для большей надежности
-      {
-        'urls': 'turn:global.turn.twilio.com:3478?transport=udp',
-        'username': 'your_username',
-        'credential': 'your_password'
+        'urls': "turn:global.relay.metered.ca:80",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
       },
       {
-        'urls': 'turn:global.turn.twilio.com:3478?transport=tcp',
-        'username': 'your_username',
-        'credential': 'your_password'
-      }
+        'urls': "turn:global.relay.metered.ca:80?transport=tcp",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
+      },
+      {
+        'urls': "turn:global.relay.metered.ca:443",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
+      },
+      {
+        'urls': "turns:global.relay.metered.ca:443?transport=tcp",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
+      },
     ]
   };
 
