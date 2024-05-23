@@ -38,6 +38,8 @@ dependencies:
   flutter_webrtc: ^0.10.6
   http: ^1.2.1
   dio: ^5.4.3+1
+  cloud_firestore: ^4.17.4
+  firebase_core: ^2.31.1
 
 dev_dependencies:
   flutter_test:
