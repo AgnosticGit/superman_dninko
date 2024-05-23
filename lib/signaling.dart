@@ -20,6 +20,22 @@ class Signaling {
           "stun:stun3.l.google.com:19302",
           "stun:stun4.l.google.com:19302"
         ]
+      },
+      {
+        'urls': 'turn:turn.anyfirewall.com:443?transport=tcp',
+        'username': 'webrtc',
+        'credential': 'webrtc'
+      },
+      // Дополнительные TURN серверы для большей надежности
+      {
+        'urls': 'turn:global.turn.twilio.com:3478?transport=udp',
+        'username': 'your_username',
+        'credential': 'your_password'
+      },
+      {
+        'urls': 'turn:global.turn.twilio.com:3478?transport=tcp',
+        'username': 'your_username',
+        'credential': 'your_password'
       }
     ]
   };
