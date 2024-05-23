@@ -33,14 +33,14 @@ class Signaling {
     //     'credential': "sIilOSXK8AoL9JDd",
     //   },
     // ],
-    // 'iceServers': [
-    //   {
-    //     'urls': [
-    //       'stun:stun1.l.google.com:19302',
-    //       'stun:stun2.l.google.com:19302'
-    //     ]
-    //   }
-    // ]
+    'iceServers': [
+      {
+        'urls': [
+          'stun:stun1.l.google.com:19302',
+          'stun:stun2.l.google.com:19302'
+        ]
+      }
+    ]
   };
 
   RTCPeerConnection? peerConnection;
