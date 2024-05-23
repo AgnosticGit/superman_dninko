@@ -11,31 +11,11 @@ class Signaling {
   );
 
   Map<String, dynamic> configuration = {
-    // 'iceServers': [
-    //   {
-    //     'urls': "stun:stun.relay.metered.ca:80"
-    //   },
-    //   {
-    //     'urls': "turn:global.relay.metered.ca:80",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    //   {
-    //     'urls': "turn:global.relay.metered.ca:80?transport=tcp",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    //   {
-    //     'urls': "turn:global.relay.metered.ca:443",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    //   {
-    //     'urls': "turns:global.relay.metered.ca:443?transport=tcp",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    // ]
+    'iceServers': [
+      {'urls': 'stun:stun.l.google.com:19302'},
+      {'urls': 'stun:stun1.l.google.com:19302'},
+      {'urls': 'stun:stun2.l.google.com:19302'},
+    ]
   };
 
   final RTCVideoRenderer remoteRenderer;
@@ -59,7 +39,6 @@ class Signaling {
       remoteStream ??= await createLocalMediaStream('remoteStream');
       event.streams[0].getTracks().forEach((track) => remoteStream!.addTrack(track));
     };
-
     peerConnection.onIceGatheringState = (state) => log(state.toString());
     peerConnection.onIceConnectionState = (state) => log(state.toString());
 
@@ -160,13 +139,21 @@ class Signaling {
     peerConnection.onIceCandidate = (candidate) {
       final callerCandidates = offerData['callerCandidates'] as List<Map<String, dynamic>>;
       callerCandidates.add(candidate.toMap());
+      log("Caller candidate");
+      log(candidate.toString());
     };
 
     final offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     offerData['offer'] = offer.toMap();
 
-    await Future.delayed(Duration(seconds: 1));
+    // while (true) {
+    //   if (await peerConnection.getIceGatheringState() ==
+    //       RTCIceGatheringState.RTCIceGatheringStateComplete) {
+    //     break;
+    //   }
+      await Future.delayed(Duration(seconds: 1));
+    // }
 
     return offerData;
   }
@@ -180,6 +167,8 @@ class Signaling {
     peerConnection.onIceCandidate = (candidate) {
       final callerCandidates = answerData['calleeCandidates'] as List<Map<String, dynamic>>;
       callerCandidates.add(candidate.toMap());
+      log("Answer candidate");
+      log(candidate.toString());
     };
 
     final offer = offerData['offer'];
@@ -203,8 +192,14 @@ class Signaling {
       peerConnection.addCandidate(iceCandidate);
     }
 
-    await Future.delayed(Duration(seconds: 1));
-
+    // while (true) {
+    //   if (await peerConnection.getIceGatheringState() ==
+    //       RTCIceGatheringState.RTCIceGatheringStateComplete) {
+    //     break;
+    //   }
+      await Future.delayed(Duration(seconds: 1));
+    // }
+    
     return answerData;
   }
 }
