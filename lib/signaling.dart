@@ -46,6 +46,9 @@ class Signaling {
       event.streams[0].getTracks().forEach((track) => remoteStream!.addTrack(track));
     };
 
+    peerConnection.onIceGatheringState = (state) => log(state.toString());
+    peerConnection.onIceConnectionState = (state) => log(state.toString());
+
     final userMedia = await navigator.mediaDevices.getUserMedia({
       'video': true,
       'audio': false,
