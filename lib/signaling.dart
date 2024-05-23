@@ -64,8 +64,8 @@ class Signaling {
     peerConnection.onIceConnectionState = (state) => log(state.toString());
 
     final userMedia = await navigator.mediaDevices.getUserMedia({
-      'video': true,
-      'audio': false,
+      'video': false,
+      'audio': true,
     });
     localStream = userMedia;
     localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
