@@ -1,15 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-
-typedef void StreamStateCallback(MediaStream stream);
 
 class Signaling {
   Signaling(
-    this.localStream,
-    this.onAddRemoteStream,
+    this.localRenderer,
+    this.remoteRenderer,
   );
 
   Map<String, dynamic> configuration = {
@@ -26,58 +24,67 @@ class Signaling {
     ]
   };
 
-  final MediaStream localStream;
-  final StreamStateCallback onAddRemoteStream;
+  final RTCVideoRenderer remoteRenderer;
+  final RTCVideoRenderer localRenderer;
 
   late final RTCPeerConnection peerConnection;
-  MediaStream? remoteStream; // Обновлено для предотвращения повторной инициализации
 
-  // String host = '192.168.56.1:9545';
-  String host = '94.41.19.174:9545';
+  late final MediaStream localStream;
+  MediaStream? remoteStream;
+
+  // final host = '192.168.56.1:9545';
+  final host = '94.41.19.174:9545';
 
   Future<void> initConnection() async {
     peerConnection = await createPeerConnection(configuration);
-    registerPeerConnectionListeners();
-    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+    peerConnection.onAddStream = (stream) {
+      remoteStream = stream;
+      remoteRenderer.srcObject = stream;
+    };
     peerConnection.onTrack = (event) async {
-      log('Event!');
       remoteStream ??= await createLocalMediaStream('remoteStream');
       event.streams[0].getTracks().forEach((track) => remoteStream!.addTrack(track));
-      onAddRemoteStream(remoteStream!);
     };
+
+    final userMedia = await navigator.mediaDevices.getUserMedia({
+      'video': true,
+      'audio': false,
+    });
+    localStream = userMedia;
+    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+    localRenderer.srcObject = userMedia;
   }
 
   Future<void> createRoom() async {
-    log('ЧТО ТО ПРОИСХОДИТ');
-    await http.post(
-      Uri.parse('http://$host/write/answer'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({'': ''}),
+    log('Создание комнаты');
+    await Dio().post(
+      'http://$host/write/answer',
+      options: Options(headers: {"Content-Type": "application/json"}),
+      data: {'1': '1'},
     );
 
     final data = await _createRoom();
 
     log('Комната создана');
 
-    await http.post(
-      Uri.parse('http://$host/write/creator'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(data),
+    await Dio().post(
+      'http://$host/write/creator',
+      options: Options(headers: {"Content-Type": "application/json"}),
+      data: data,
     );
 
-    log('Комната записана на сервак');
+    log('Комната записана на сервер');
 
     while (true) {
       try {
-        final data = await http.get(
-          Uri.parse('http://$host/read/answer'),
+        final response = await Dio().get(
+          'http://$host/read/answer',
+          options: Options(headers: {"Content-Type": "application/json"}),
         );
 
-        log('Получение ответа');
-
-        if (data.body.contains('calleeCandidates')) {
-          final body = jsonDecode(data.body);
-          final rawCalleeCandidates = body['calleeCandidates'] as List<dynamic>;
+        log('Ждем ответа');
+        if (response.data.containsKey('calleeCandidates')) {
+          final rawCalleeCandidates = response.data['calleeCandidates'] as List<dynamic>;
           final calleeCandidates = rawCalleeCandidates.map(
             (e) => RTCIceCandidate(e['candidate'], e['sdpMid'], e['sdpMLineIndex']),
           );
@@ -88,10 +95,9 @@ class Signaling {
 
           if (calleeCandidates.isNotEmpty) {
             log('Ответ получен');
-            final body = jsonDecode(data.body);
             final answer = RTCSessionDescription(
-              body['answer']['sdp'],
-              body['answer']['type'],
+              response.data['answer']['sdp'],
+              response.data['answer']['type'],
             );
 
             await peerConnection.setRemoteDescription(answer);
@@ -108,24 +114,23 @@ class Signaling {
   }
 
   Future<void> joinRoom() async {
-    final offerData = await http.get(
-      Uri.parse('http://$host/read/creator'),
+    final offerData = await Dio().get(
+      'http://$host/read/creator',
+      options: Options(headers: {"Content-Type": "application/json"}),
     );
-
-    final body = jsonDecode(offerData.body);
+    log('Подключаемся к комнате');
     final offer = RTCSessionDescription(
-      body['offer']['sdp'],
-      body['offer']['type'],
+      offerData.data['offer']['sdp'],
+      offerData.data['offer']['type'],
     );
 
     await peerConnection.setRemoteDescription(offer);
+    final answerData = await _joinRoom(offerData.data);
 
-    final answerData = await _joinRoom(body);
-
-    await http.post(
-      Uri.parse('http://$host/write/answer'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(answerData),
+    await Dio().post(
+      'http://$host/write/answer',
+      options: Options(headers: {"Content-Type": "application/json"}),
+      data: answerData,
     );
   }
 
@@ -184,31 +189,5 @@ class Signaling {
     await Future.delayed(Duration(seconds: 1));
 
     return answerData;
-  }
-
-  void registerPeerConnectionListeners() {
-    peerConnection.onIceGatheringState = (state) {
-      log('ICE gathering state changed: $state');
-    };
-
-    peerConnection.onConnectionState = (state) {
-      log('Connection state change: $state');
-    };
-
-    peerConnection.onSignalingState = (state) {
-      log('Signaling state change: $state');
-    };
-
-    peerConnection.onIceConnectionState = (state) {
-      log('ICE connection state change: $state');
-    };
-
-    peerConnection.onAddStream = (stream) {
-      log("Add remote stream");
-      if (remoteStream == null) {
-        remoteStream = stream;
-        onAddRemoteStream(remoteStream!);
-      }
-    };
   }
 }

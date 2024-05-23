@@ -37,20 +37,15 @@ class _MyHomePageState extends State<MyHomePage> {
   final _localRenderer = RTCVideoRenderer();
   final _remoteRenderer = RTCVideoRenderer();
 
-  final textEditingController = TextEditingController(text: '');
-
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _localRenderer.initialize();
       _remoteRenderer.initialize();
 
-      final stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': false});
-      _localRenderer.srcObject = stream;
-
       signaling = Signaling(
-        stream,
-        _onAddRemoteStream,
+        _localRenderer,
+        _remoteRenderer,
       );
 
       await signaling.initConnection();
@@ -61,20 +56,6 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     super.initState();
-  }
-
-  void _onAddRemoteStream(MediaStream stream) {
-    log('Stream!!!!!');
-    _remoteRenderer.srcObject = stream;
-    log(stream.id);
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _localRenderer.dispose();
-    _remoteRenderer.dispose();
-    super.dispose();
   }
 
   @override
@@ -111,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(border: Border.all()),
-                      child: RTCVideoView(_localRenderer, mirror: true),
+                      child: RTCVideoView(_localRenderer),
                     ),
                   ),
                   Expanded(
@@ -124,22 +105,15 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: TextFormField(
-                    controller: textEditingController,
-                  ),
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 8)
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
+    super.dispose();
   }
 }
