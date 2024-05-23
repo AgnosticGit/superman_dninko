@@ -37,7 +37,7 @@ class Signaling {
   Future<void> createRoom(RTCVideoRenderer remoteRenderer) async {
     log('ЧТО ТО ПРОИСХОДИТ');
     await http.post(
-      Uri.parse('http://94.41.19.174:9545/write/answer'),
+      Uri.parse('http://192.168.56.1:9545/write/answer'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({'': ''}),
     );
@@ -47,7 +47,7 @@ class Signaling {
     log('Комната создана');
 
     await http.post(
-      Uri.parse('http://94.41.19.174:9545/write/creator'),
+      Uri.parse('http://192.168.56.1:9545/write/creator'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(data),
     );
@@ -57,7 +57,7 @@ class Signaling {
     while (true) {
       try {
         final data = await http.get(
-          Uri.parse('http://94.41.19.174:9545/read/answer'),
+          Uri.parse('http://192.168.56.1:9545/read/answer'),
         );
 
         log('Получение ответа');
@@ -129,7 +129,7 @@ class Signaling {
 
   Future<void> joinRoom(RTCVideoRenderer remoteRenderer) async {
     final offerData = await http.get(
-      Uri.parse('http://94.41.19.174:9545/read/creator'),
+      Uri.parse('http://192.168.56.1:9545/read/creator'),
     );
 
     final body = jsonDecode(offerData.body);
@@ -143,7 +143,7 @@ class Signaling {
     final answerData = await _joinRoom(body, remoteRenderer);
 
     await http.post(
-      Uri.parse('http://94.41.19.174:9545/write/answer'),
+      Uri.parse('http://192.168.56.1:9545/write/answer'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(answerData),
     );
