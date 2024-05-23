@@ -152,8 +152,9 @@ class Signaling {
     //       RTCIceGatheringState.RTCIceGatheringStateComplete) {
     //     break;
     //   }
-      await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(Duration(seconds: 1));
     // }
+    print(offerData['callerCandidates'].length);
 
     return offerData;
   }
@@ -197,9 +198,8 @@ class Signaling {
     //       RTCIceGatheringState.RTCIceGatheringStateComplete) {
     //     break;
     //   }
-      await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(Duration(seconds: 1));
     // }
-    
     return answerData;
   }
 }
