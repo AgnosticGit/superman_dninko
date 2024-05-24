@@ -9,14 +9,20 @@ typedef void StreamStateCallback(MediaStream stream);
 class Signaling {
   Map<String, dynamic> configuration = {
     'iceServers': [
+      {
+        'urls': "turn:hashtalk.io:5349",
+        'username': "root",
+        'credential': "hashtalk_turnserver_secret0",
+      },
+
       // {
       //   'urls': "stun:stun.relay.metered.ca:80",
       // },
-      {
-        'urls': "turn:global.relay.metered.ca:80",
-        'username': "4a66d8e092e3eec7ad902d7a",
-        'credential': "sIilOSXK8AoL9JDd",
-      },
+      // {
+      //   'urls': "turn:global.relay.metered.ca:80",
+      //   'username': "4a66d8e092e3eec7ad902d7a",
+      //   'credential': "sIilOSXK8AoL9JDd",
+      // },
       // {
       //   'urls': "turn:global.relay.metered.ca:80?transport=tcp",
       //   'username': "4a66d8e092e3eec7ad902d7a",
@@ -203,7 +209,7 @@ class Signaling {
     RTCVideoRenderer localVideo,
     RTCVideoRenderer remoteVideo,
   ) async {
-    var stream = await navigator.mediaDevices.getUserMedia({'video': false, 'audio': true});
+    var stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': false});
 
     localVideo.srcObject = stream;
     localStream = stream;
