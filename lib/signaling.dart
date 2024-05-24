@@ -8,6 +8,8 @@ typedef void StreamStateCallback(MediaStream stream);
 
 class Signaling {
   Map<String, dynamic> configuration = {
+    'iceTransportPolicy': 'relay',
+    'sdpSemantics': 'uinified-plan',
     'iceServers': [
       {
         'urls': "turn:hashtalk.io:5349",
