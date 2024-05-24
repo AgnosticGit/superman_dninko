@@ -8,39 +8,31 @@ typedef void StreamStateCallback(MediaStream stream);
 
 class Signaling {
   Map<String, dynamic> configuration = {
-    // 'iceServers': [
-    //   {
-    //     'urls': "stun:stun.relay.metered.ca:80",
-    //   },
-    //   {
-    //     'urls': "turn:global.relay.metered.ca:80",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    //   {
-    //     'urls': "turn:global.relay.metered.ca:80?transport=tcp",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    //   {
-    //     'urls': "turn:global.relay.metered.ca:443",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    //   {
-    //     'urls': "turns:global.relay.metered.ca:443?transport=tcp",
-    //     'username': "4a66d8e092e3eec7ad902d7a",
-    //     'credential': "sIilOSXK8AoL9JDd",
-    //   },
-    // ],
     'iceServers': [
       {
-        'urls': [
-          'stun:stun1.l.google.com:19302',
-          'stun:stun2.l.google.com:19302'
-        ]
-      }
-    ]
+        'urls': "stun:stun.relay.metered.ca:80",
+      },
+      {
+        'urls': "turn:global.relay.metered.ca:80",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
+      },
+      {
+        'urls': "turn:global.relay.metered.ca:80?transport=tcp",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
+      },
+      {
+        'urls': "turn:global.relay.metered.ca:443",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
+      },
+      {
+        'urls': "turns:global.relay.metered.ca:443?transport=tcp",
+        'username': "4a66d8e092e3eec7ad902d7a",
+        'credential': "sIilOSXK8AoL9JDd",
+      },
+    ],
   };
 
   RTCPeerConnection? peerConnection;
