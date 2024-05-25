@@ -194,7 +194,7 @@ class Signaling {
     RTCVideoRenderer localVideo,
     RTCVideoRenderer remoteVideo,
   ) async {
-    var stream = await navigator.mediaDevices.getUserMedia({'video': false, 'audio': true});
+    var stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': false});
 
     localVideo.srcObject = stream;
     localStream = stream;
