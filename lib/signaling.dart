@@ -12,8 +12,7 @@ class Signaling {
     'sdpSemantics': 'uinified-plan',
     'iceServers': [
       {
-        // 'urls': "turn:hashtalk.io:5349", // encrypted
-        'urls': "turn:hashtalk.io:3478", //
+        'urls': "turn:hashtalk.io:5349",
         'username': "root",
         'credential': "hashtalk_turnserver_secret0",
       },
