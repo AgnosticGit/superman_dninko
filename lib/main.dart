@@ -35,7 +35,7 @@ class _MyHomePageState extends State<MyHomePage> {
   RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   String? roomId;
-  TextEditingController textEditingController = TextEditingController(text: '');
+  TextEditingController textEditingController = TextEditingController(text: '1');
 
   @override
   void initState() {

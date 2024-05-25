@@ -7,7 +7,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 typedef void StreamStateCallback(MediaStream stream);
 
 class Signaling {
-  Map<String, dynamic> configuration = {
+  final Map<String, dynamic> configuration = {
     'iceTransportPolicy': 'relay',
     'sdpSemantics': 'uinified-plan',
     'iceServers': [
@@ -16,30 +16,13 @@ class Signaling {
         'username': "root",
         'credential': "hashtalk_turnserver_secret0",
       },
+    ],
+  };
 
-      // {
-      //   'urls': "stun:stun.relay.metered.ca:80",
-      // },
-      // {
-      //   'urls': "turn:global.relay.metered.ca:80",
-      //   'username': "4a66d8e092e3eec7ad902d7a",
-      //   'credential': "sIilOSXK8AoL9JDd",
-      // },
-      // {
-      //   'urls': "turn:global.relay.metered.ca:80?transport=tcp",
-      //   'username': "4a66d8e092e3eec7ad902d7a",
-      //   'credential': "sIilOSXK8AoL9JDd",
-      // },
-      // {
-      //   'urls': "turn:global.relay.metered.ca:443",
-      //   'username': "4a66d8e092e3eec7ad902d7a",
-      //   'credential': "sIilOSXK8AoL9JDd",
-      // },
-      // {
-      //   'urls': "turns:global.relay.metered.ca:443?transport=tcp",
-      //   'username': "4a66d8e092e3eec7ad902d7a",
-      //   'credential': "sIilOSXK8AoL9JDd",
-      // },
+  final Map<String, dynamic> offerSdpConstraints = {
+    'mandatory': {},
+    'optional': [
+      {'DtlsSrtpKeyAgreement': true},
     ],
   };
 
@@ -52,11 +35,11 @@ class Signaling {
 
   Future<String> createRoom(RTCVideoRenderer remoteRenderer) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
-    DocumentReference roomRef = db.collection('rooms').doc();
+    DocumentReference roomRef = db.collection('rooms').doc('1');
 
     log('Create PeerConnection with configuration: $configuration');
 
-    peerConnection = await createPeerConnection(configuration);
+    peerConnection = await createPeerConnection(configuration, offerSdpConstraints);
 
     registerPeerConnectionListeners();
 
